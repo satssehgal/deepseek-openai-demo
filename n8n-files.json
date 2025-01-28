@@ -1,0 +1,323 @@
+{
+  "name": "My workflow copy",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        280,
+        -180
+      ],
+      "id": "3e71d35e-fe9a-4b41-881b-538b2c0ee15c",
+      "name": "When chat message received",
+      "webhookId": "94436720-9291-4e63-9a08-d978c42f8a8b"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=IMPORTANT INSTRUCTIONS:\n\nToday's date is [current date]. You MUST use this current date.\nYou are REQUIRED to use at least one search tool for EVERY response. NEVER rely on base knowledge.\nALWAYS start with News Search tool then move on to the Google Search Tool, then wikipedia and finally tavily_search. This step is CRITICAL so do not ignore it\nFor ANY factual information, you MUST verify it with two or more tools.\nIf you respond without using a tool, you are making a CRITICAL ERROR.\nALWAYS check the chat history before responding.\nRemember information shared by the user (like their name, age, location).\nFor searches:\nUse Google Search for general information\nUse News Search for the latest news and current events\nUse Wikipedia for knowledge fact checking\nUse Tavily to fact check the News Search Tool and Google Search\nYour base knowledge is considered outdated - ONLY trust tool results.\nCRITICAL PROCESS FOR EVERY RESPONSE:\n\nALWAYS start by using a news search tool then google search tool, then move on to tavily and wikipedia\nALWAYS Fact check your response with another tool(s) to ensure consistency\nCheck chat_history for context\nCombine search results with conversation context\nIf uncertain, perform additional searches\nReturn the answer and nothing else, no expalantions or suggestions that do not pertain to the question\nEXACT FORMAT TO FOLLOW:\nThought: I need to search for information\nAction: google_search OR news_search OR tavily_search\nAction Input: your search query + {{ $now.year }}\nObservation: (wait for result)\nThought: process the search result\nFinal Answer: your response based on the search"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        500,
+        -180
+      ],
+      "id": "e8993636-995a-41aa-b5b4-1e908d4ff790",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-r1:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        140,
+        40
+      ],
+      "id": "6ddbfa35-a3a4-4028-8104-eadb0832a3ef",
+      "name": "Ollama Chat Model"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        800,
+        60
+      ],
+      "id": "70f4c060-6cb1-4b82-bee7-e1962c870b03",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "key",
+              "valueProvider": "fieldValue",
+              "value": "[GOOGLE_API_KEY]"
+            },
+            {
+              "name": "cx",
+              "valueProvider": "fieldValue",
+              "value": "[GOOGLE_SEARCH_ENGINE_ID]"
+            },
+            {
+              "name": "q",
+              "valueProvider": "fieldValue",
+              "value": "{{ $json.chatInput }} {{ $now.year }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        60
+      ],
+      "id": "ab241479-8859-4a14-b792-121d6b40bc63",
+      "name": "Google Search Tool"
+    },
+    {
+      "parameters": {
+        "model": "=deepseek-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        280,
+        40
+      ],
+      "id": "9df993b8-c406-40a4-a6f5-c9e16e726913",
+      "name": "Deekseek-v3"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        40
+      ],
+      "id": "6ec39e00-1b27-48d6-98be-8eee1957df94",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "apiKey",
+              "valueProvider": "fieldValue",
+              "value": "[NEWS_API_KEY]"
+            },
+            {
+              "name": "q",
+              "valueProvider": "fieldValue",
+              "value": "{{ $json.chatInput }} {{ $now.year }}"
+            },
+            {
+              "name": "from",
+              "valueProvider": "fieldValue",
+              "value": "={{ $now }}"
+            },
+            {
+              "name": "sortBy",
+              "valueProvider": "fieldValue",
+              "value": "publishedAt"
+            },
+            {
+              "name": "language",
+              "valueProvider": "fieldValue",
+              "value": "en"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        60
+      ],
+      "id": "280f3f35-4170-4e35-af6d-dbf50d2a8463",
+      "name": "News Search Tool"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -20,
+        40
+      ],
+      "id": "9e8c1b9c-6492-49f0-8025-de736d91206b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xFDSAxRcAdnJOqwA",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "=deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        40
+      ],
+      "id": "c553dd7f-2e12-451b-a835-9b338c3e6984",
+      "name": "Deekseek-r1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/searcb",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "api_key",
+              "valueProvider": "fieldValue",
+              "value": "[TAVILY_API_KEY]"
+            },
+            {
+              "name": "query",
+              "valueProvider": "fieldValue",
+              "value": "{{ $json.chatInput }} {{ $now.year }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        700,
+        60
+      ],
+      "id": "54436a8c-3be4-46e7-bb0a-cc5d60bb74e3",
+      "name": "Tavily"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Search Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f348e009-68a6-4b7c-8e6e-8b95b5d4687f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "078d7088cc185b56d22e1f66bfec393066e1de495ab9c11cab21156402aa4a4b"
+  },
+  "id": "ubdGPwu73NLqkkMJ",
+  "tags": []
+}
